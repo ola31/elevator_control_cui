@@ -32,6 +32,10 @@
 #include <cstdlib>
 #include <utility>
 
+#include <codecvt>
+#include <ncursesw/curses.h>
+
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -64,6 +68,82 @@ public:
   MainNode();
   ~MainNode();
 
+  void init_window();
+  void input_handler(char c);
+  void init_window_format();
+  void print_test(std::string value);
+  void print_ev_num(std::string value);
+  void print_ev_name(std::string value);
+  void print_floor(std::string value);
+  void print_direction(std::string value);
+  void print_run(std::string value);
+  void print_door(std::string value);
+  void print_mode(std::string value);
+  void print_in_ev(bool value);
+  void print_ev_status();
+
+  void print_call_ev_num(std::string value);
+  void print_call_floor(std::string value);
+  void print_dest_floor(std::string value);
+  void print_sequence(std::string value);
+  void print_service_result(std::string value);
+
+  void update_topic_recv_time();
+
+  void robot_service_seqeunce_callback(
+    const elevator_interfaces::msg::RobotServiceSequence::SharedPtr msg);
+
+  // Robot Service Callers
+  void robot_service_call(int ev_num, std::string call_floor, std::string dest_floor);
+  void robot_service_in_ev_call(int ev_num, std::string dest_floor);
+  void cancel_robot_service();
+  void get_ev_status(int ev_num);
+  void set_robot_service(std::string robot_status);
+
+  std::string array_msg_to_string(std::vector<int8_t> array_msg);
+  std::string array_msg_to_string(std::vector<int32_t> array_msg);
+  std::string array_msg_to_string(std::vector<std::string> array_msg);
+
+  // ROS Subscriber
+  rclcpp::Subscription<elevator_interfaces::msg::RobotServiceSequence>::SharedPtr
+    sequence_subscriber;
+
+  // ROS Service Client
+  rclcpp::Client<elevator_interfaces::srv::CallRobotService>::SharedPtr call_robot_service_client;
+  rclcpp::Client<elevator_interfaces::srv::CallRobotServiceInEV>::SharedPtr
+    call_robot_service_in_ev_client;
+  rclcpp::Client<elevator_interfaces::srv::CallElevatorService>::SharedPtr call_ev_service_client;
+  rclcpp::Client<elevator_interfaces::srv::CancelRobotService>::SharedPtr
+    cancel_robot_service_client;
+  rclcpp::Client<elevator_interfaces::srv::GetElevatorStatus>::SharedPtr get_ev_status_client;
+  rclcpp::Client<elevator_interfaces::srv::SetRobotService>::SharedPtr set_robot_status_client;
+
+private:
+  const int UPPER_WIN_START_X = 1;
+  const int UPPER_WIN_START_Y = 1;
+  const int LOWER_WIN_START_X = 1;
+  const int LOWER_WIN_START_Y = 9;
+
+  bool in_ev_ = false;
+  std::string call_ev_num_;
+  std::string call_floor_ = "";
+  std::string dest_floor_ = "";
+  std::string sequence_ = "";
+
+  std::string ev_num_ = "";
+  std::string ev_name_ = "";
+  std::string floor_ = "";
+  std::string direction_ = "";
+  std::string run_ = "";
+  std::string door_ = "";
+  std::string mode_ = "";
+
+  std::string robot_service_result_ = "";
+
+  std::string topic_recv_time_ = "";
+
+  WINDOW * sub_window;
+  int cnt_ = 0;
 };
 
 #endif  // TKE_CONTROLLER__TKE_CONTROLLER_NODE_HPP_

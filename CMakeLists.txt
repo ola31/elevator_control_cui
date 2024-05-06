@@ -15,14 +15,21 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+add_compile_options(-lncursesw)
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(elevator_interfaces REQUIRED)
+find_package(Curses REQUIRED)
+
+set(CURSES_NEED_WIDE TRUE)
+SET(CMAKE_CXX_FLAGS "-lncursesw")
 
 include_directories(include)
+include_directories(${CURSES_INCLUDE_DIR})
 
 add_executable(elevator_control_cui
     #src/tke_controller_node.cpp
@@ -31,6 +38,10 @@ add_executable(elevator_control_cui
     #src/ev_info.cpp
     src/main_node.cpp
     )
+
+target_link_libraries(elevator_control_cui ${CURSES_LIBRARIES} -lncursesw)
+
+
 ament_target_dependencies(elevator_control_cui
     ament_cmake
     ament_index_cpp

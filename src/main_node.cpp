@@ -7,6 +7,7 @@
 #include <vector>
 // #include <ncurses.h>
 #include <locale.h>
+#include <time.h>
 
 #include "elevator_control_cui/main_node.hpp"
 
@@ -50,6 +51,9 @@ MainNode::MainNode()
 MainNode::~MainNode()
 {
   std::cout << "terminate..." << std::endl;
+  delwin(ev_status_sub_window_);
+  delwin(ev_status_window_);
+  delwin(ev_status_window2_);
   delwin(sub_window);
   endwin();
 }
@@ -109,13 +113,15 @@ void MainNode::get_ev_status(int ev_num)
       door_ = array_msg_to_string(door);
       mode_ = array_msg_to_string(mode);
 
-      print_ev_num(ev_num_);
-      print_ev_name(ev_name_);
-      print_floor(floor_);
-      print_direction(direction_);
-      print_run(run_);
-      print_door(door_);
-      print_mode(mode_);
+//      print_ev_num(ev_num_);
+//      print_ev_name(ev_name_);
+//      print_floor(floor_);
+//      print_direction(direction_);
+//      print_run(run_);
+//      print_door(door_);
+//      print_mode(mode_);
+      print_ev_status();
+
       return;
     };
 
@@ -257,28 +263,34 @@ void MainNode::init_window()
   keypad(stdscr, TRUE);     // 특수문자 입력 가능
   curs_set(0);     // 커서 사라짐
   noecho();     // 입력문자 안보이게
+  start_color();
+  init_color_pair();
 
+  bkgd(COLOR_PAIR(COLOR_PAIR_BG));
+  refresh();
+
+//  print_ev_status();
+  init_ev_status_window();
+  init_ev_status_window2();
   init_window_format();
-  print_ev_status();
 }
 
 void MainNode::init_window_format()
 {
-  mvprintw(UPPER_WIN_START_Y + 0, UPPER_WIN_START_X, "----------------------------");
-  mvprintw(UPPER_WIN_START_Y + 1, UPPER_WIN_START_X, "ev_num    : ");
-  mvprintw(UPPER_WIN_START_Y + 2, UPPER_WIN_START_X, "ev_name   : ");
-  mvprintw(UPPER_WIN_START_Y + 3, UPPER_WIN_START_X, "floor     : ");
-  mvprintw(UPPER_WIN_START_Y + 4, UPPER_WIN_START_X, "direction : ");
-  mvprintw(UPPER_WIN_START_Y + 5, UPPER_WIN_START_X, "run       : ");
-  mvprintw(UPPER_WIN_START_Y + 6, UPPER_WIN_START_X, "door      : ");
-  mvprintw(UPPER_WIN_START_Y + 7, UPPER_WIN_START_X, "mode      : ");
-  mvprintw(UPPER_WIN_START_Y + 8, UPPER_WIN_START_X, "----------------------------");
-  mvprintw(UPPER_WIN_START_Y + 9, UPPER_WIN_START_X, "ev_num     : ");
-  mvprintw(UPPER_WIN_START_Y + 10, UPPER_WIN_START_X, "call_floor : ");
-  mvprintw(UPPER_WIN_START_Y + 11, UPPER_WIN_START_X, "dest_floor : ");
-  mvprintw(UPPER_WIN_START_Y + 12, UPPER_WIN_START_X, "In EV      : [ ]");
-  mvprintw(UPPER_WIN_START_Y + 13, UPPER_WIN_START_X, "Sequence   : ");
-  mvprintw(UPPER_WIN_START_Y + 14, UPPER_WIN_START_X, "result     : ");
+  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 1, UPPER_WIN_START_X, "ev_num    ");
+  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 2, UPPER_WIN_START_X, "ev_name   ");
+  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 3, UPPER_WIN_START_X, "floor     ");
+  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 4, UPPER_WIN_START_X, "direction ");
+  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 5, UPPER_WIN_START_X, "run       ");
+  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 6, UPPER_WIN_START_X, "door      ");
+  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 7, UPPER_WIN_START_X, "mode      ");
+
+//  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 9, UPPER_WIN_START_X, "ev_num     : ");
+//  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 10, UPPER_WIN_START_X, "call_floor : ");
+//  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 11, UPPER_WIN_START_X, "dest_floor : ");
+//  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 12, UPPER_WIN_START_X, "In EV      : [ ]");
+//  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 13, UPPER_WIN_START_X, "Sequence   : ");
+//  mvwprintw(ev_status_window_, UPPER_WIN_START_Y + 14, UPPER_WIN_START_X, "result     : ");
   //mvprintw(UPPER_WIN_START_Y + 14, UPPER_WIN_START_X, "");
 //  /mvprintw(UPPER_WIN_START_Y + 15, UPPER_WIN_START_X, "");
   mvprintw(
@@ -303,6 +315,26 @@ void MainNode::init_window_format()
     "SPACE x 5 : Call Robot Service");
 }
 
+void MainNode::init_ev_status_window()
+{
+  ev_status_window_ = newwin(10, 70, 1, 1);
+  box(ev_status_window_, ACS_VLINE, ACS_HLINE);
+  wbkgd(ev_status_window_, COLOR_PAIR(COLOR_PAIR_WHITE_BLUE_));
+  wrefresh(ev_status_window_);
+
+  ev_status_sub_window_ = subwin(ev_status_window_, 10, 59, 1, 12);
+  wbkgd(ev_status_sub_window_, COLOR_PAIR(COLOR_PAIR_WHITE_BLUE_));
+  box(ev_status_sub_window_, ACS_VLINE, ACS_HLINE);
+  wrefresh(ev_status_sub_window_);
+}
+
+void MainNode::init_ev_status_window2()
+{
+  ev_status_window2_ = newwin(5, 30, 20, 5);
+  box(ev_status_window2_, ACS_VLINE, ACS_HLINE);
+  wbkgd(ev_status_window2_, COLOR_PAIR(3));
+  wrefresh(ev_status_window2_);
+}
 
 void MainNode::print_test(std::string value)
 {
@@ -325,66 +357,67 @@ void MainNode::print_ev_status()
   print_run(run_);
   print_door(door_);
   print_mode(mode_);
-  print_in_ev(in_ev_);
+  wrefresh(ev_status_sub_window_);
+//  print_in_ev(in_ev_);
+}
+
+void MainNode::init_color_pair()
+{
+  init_pair(COLOR_PAIR_BG, COLOR_BLACK, COLOR_BLACK);
+  init_pair(COLOR_PAIR_WHITE_BLUE_, COLOR_WHITE, COLOR_BLUE);
+  init_pair(COLOR_PAIR_BLUE_GREEN_, COLOR_BLUE, COLOR_GREEN);
+  init_pair(COLOR_PAIR_BLACK_GREEN_, COLOR_BLACK, COLOR_GREEN);
 }
 
 void MainNode::print_ev_num(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 1, UPPER_WIN_START_X + 12, value.c_str());
+  mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 1, 1, value.c_str());
 }
 
 void MainNode::print_ev_name(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 2, UPPER_WIN_START_X + 12, value.c_str());
+  mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 2, 1, value.c_str());
 }
 
 void MainNode::print_floor(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 3, UPPER_WIN_START_X + 12, "                         ");
-  mvprintw(UPPER_WIN_START_Y + 3, UPPER_WIN_START_X + 12, value.c_str());
+  mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 3, 1, value.c_str());
 }
 
 
 void MainNode::print_direction(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 4, UPPER_WIN_START_X + 12, "                         ");
-  mvprintw(UPPER_WIN_START_Y + 4, UPPER_WIN_START_X + 12, value.c_str());
+  mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 4, 1, value.c_str());
 }
 
 void MainNode::print_run(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 5, UPPER_WIN_START_X + 12, "                         ");
-  mvprintw(UPPER_WIN_START_Y + 5, UPPER_WIN_START_X + 12, value.c_str());
+  mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 5, 1, value.c_str());
 }
 
 
 void MainNode::print_door(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 6, UPPER_WIN_START_X + 12, "                         ");
-  mvprintw(UPPER_WIN_START_Y + 6, UPPER_WIN_START_X + 12, value.c_str());
+  mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 6, 1, value.c_str());
 }
 
 void MainNode::print_mode(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 7, UPPER_WIN_START_X + 12, "                         ");
-  mvprintw(UPPER_WIN_START_Y + 7, UPPER_WIN_START_X + 12, value.c_str());
+  mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 7, 1, value.c_str());
 }
 
 void MainNode::print_call_ev_num(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 9, UPPER_WIN_START_X + 12, "                         ");
   mvprintw(UPPER_WIN_START_Y + 9, UPPER_WIN_START_X + 13, value.c_str());
 }
 
 void MainNode::print_call_floor(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 10, UPPER_WIN_START_X + 12, "                         ");
   mvprintw(UPPER_WIN_START_Y + 10, UPPER_WIN_START_X + 13, value.c_str());
 }
 
 void MainNode::print_dest_floor(std::string value)
 {
-  mvprintw(UPPER_WIN_START_Y + 11, UPPER_WIN_START_X + 12, "                         ");
   mvprintw(UPPER_WIN_START_Y + 11, UPPER_WIN_START_X + 13, value.c_str());
 }
 
@@ -428,7 +461,7 @@ void MainNode::input_handler(char c)
     cnt_ = 0;
   } else if (c == 'e' || c == 'E') {
 
-    WINDOW * sub_window = newwin(10, 30, 5, 5);
+    sub_window = newwin(10, 30, 5, 5);
     box(sub_window, ACS_VLINE, ACS_HLINE);
     wmove(sub_window, 2, 2);
     mvwprintw(sub_window, 2, 2, "EV Num     : ");
@@ -463,7 +496,7 @@ void MainNode::input_handler(char c)
     refresh();
     cnt_ = 0;
   } else if (c == 'c' || c == 'C') {
-    WINDOW * sub_window = newwin(5, 30, 5, 5);
+    sub_window = newwin(5, 30, 5, 5);
     box(sub_window, ACS_VLINE, ACS_HLINE);
     wmove(sub_window, 2, 2);
     wprintw(sub_window, "Call Floor : ");
@@ -484,7 +517,7 @@ void MainNode::input_handler(char c)
     refresh();
     cnt_ = 0;
   } else if (c == 'd' || c == 'D') {
-    WINDOW * sub_window = newwin(5, 30, 5, 5);
+    sub_window = newwin(5, 30, 5, 5);
     box(sub_window, ACS_VLINE, ACS_HLINE);
     wmove(sub_window, 2, 2);
     wprintw(sub_window, "Dest Floor : ");
@@ -505,7 +538,7 @@ void MainNode::input_handler(char c)
     refresh();
     cnt_ = 0;
   } else if (c == 'e' || c == 'E') {
-    WINDOW * sub_window = newwin(5, 30, 5, 5);
+    sub_window = newwin(5, 30, 5, 5);
     box(sub_window, ACS_VLINE, ACS_HLINE);
     wmove(sub_window, 2, 2);
     wprintw(sub_window, "ev_num : ");
@@ -534,6 +567,11 @@ void MainNode::input_handler(char c)
   } else if (c == 'g' || c == 'G') {
     set_robot_service("Getting Off");
     cnt_ = 0;
+  } else if (c == 'r' || c == 'R') {
+
+    clear();
+    endwin();
+    init_window();
   }
 
   if (c == ' ') {
@@ -554,6 +592,11 @@ void MainNode::input_handler(char c)
       cnt_ = 0;
     }
   }
+}
+
+void MainNode::get_keyboard_input(char & c)
+{
+  c = wgetch(ev_status_window_);
 }
 
 int main(int argc, char * argv[])
@@ -580,17 +623,14 @@ int main(int argc, char * argv[])
 
   while (rclcpp::ok()) {
     nodelay(stdscr, TRUE);
-    c = getch();
-
-    getstr(str);
+    node->get_keyboard_input(c);
 
     if (c == 'q' || c == 'Q') {
+      endwin();
       break;
     }
 
     node->input_handler(c);
-
-    refresh();
 
     rclcpp::spin_some(node);
 

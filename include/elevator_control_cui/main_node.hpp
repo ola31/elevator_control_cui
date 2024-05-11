@@ -69,8 +69,13 @@ public:
   ~MainNode();
 
   void init_window();
+  void init_color_pair();
   void input_handler(char c);
   void init_window_format();
+  void init_ev_status_window();
+  void init_ev_status_window2();
+  void get_keyboard_input(char & c);
+
   void print_test(std::string value);
   void print_ev_num(std::string value);
   void print_ev_name(std::string value);
@@ -120,7 +125,7 @@ public:
 
 private:
   const int UPPER_WIN_START_X = 1;
-  const int UPPER_WIN_START_Y = 1;
+  const int UPPER_WIN_START_Y = 0;
   const int LOWER_WIN_START_X = 1;
   const int LOWER_WIN_START_Y = 9;
 
@@ -143,6 +148,15 @@ private:
   std::string topic_recv_time_ = "";
 
   WINDOW * sub_window;
+  WINDOW * ev_status_window_;
+  WINDOW * ev_status_sub_window_;
+  WINDOW * ev_status_window2_;
+
+  const int COLOR_PAIR_BG = 0;
+  const int COLOR_PAIR_WHITE_BLUE_ = 1;
+  const int COLOR_PAIR_BLUE_GREEN_ = 2;
+  const int COLOR_PAIR_BLACK_GREEN_ = 3;
+
   int cnt_ = 0;
 };
 

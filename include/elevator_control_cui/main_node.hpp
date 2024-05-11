@@ -70,11 +70,18 @@ public:
 
   void init_window();
   void init_color_pair();
-  void input_handler(char c);
+  void input_handler(int c);
   void init_window_format();
   void init_ev_status_window();
-  void init_ev_status_window2();
-  void get_keyboard_input(char & c);
+  void init_robot_service_window();
+  void clear_robot_service_item(int index);
+  void set_robot_service_item_on(int index);
+  void init_set_sequence_window();
+  void update_sequence();
+  void set_send_sequence_item_on(int index);
+  void init_menu_window();
+  void set_menu_item_on(int index);
+  void get_keyboard_input(int & c);
 
   void print_test(std::string value);
   void print_ev_num(std::string value);
@@ -147,17 +154,32 @@ private:
 
   std::string topic_recv_time_ = "";
 
-  WINDOW * sub_window;
-  WINDOW * ev_status_window_;
-  WINDOW * ev_status_sub_window_;
-  WINDOW * ev_status_window2_;
+  WINDOW * sub_window = nullptr;
+  WINDOW * ev_status_window_ = nullptr;
+  WINDOW * ev_status_sub_window_ = nullptr;
+  WINDOW * robot_service_window_ = nullptr;
+  WINDOW * set_sequence_window_ = nullptr;
+  WINDOW * menu_window_ = nullptr;
 
   const int COLOR_PAIR_BG = 0;
   const int COLOR_PAIR_WHITE_BLUE_ = 1;
   const int COLOR_PAIR_BLUE_GREEN_ = 2;
   const int COLOR_PAIR_BLACK_GREEN_ = 3;
+  const int COLOR_PAIR_MENU_ = 4;
+  const int COLOR_PAIR_MENU_ITEM_ = 5;
+  const int COLOR_PAIR_MENU_ITEM_ON_ = 6;
+  const int COLOR_PAIR_ROBOT_SERVICE_DATA_ = 7;
+  const int COLOR_PAIR_ROBOT_SERVICE_ITEM_ON_ = 8;
+
+
+  enum MenuItem {ROBOT_SERVICE = 0, SET_SEQUENCE, GET_EV_STATUS};
+  enum RobotServiceItem {EV_NUM = 0, CALL_FLOOR, DEST_FLOOR, IV_EV};
+  enum SetSequenceItem {TAKING_ON = 0, GETTING_OFF};
 
   int cnt_ = 0;
+  int curr_menu_index_ = 0;
+  int curr_robot_service_item_ = 0;
+  int curr_sequnce_item_ = 0;
 };
 
 #endif  // TKE_CONTROLLER__TKE_CONTROLLER_NODE_HPP_

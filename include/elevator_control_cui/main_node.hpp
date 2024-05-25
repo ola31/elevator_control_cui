@@ -77,6 +77,9 @@ public:
   void clear_robot_service_item(int index);
   void set_robot_service_item_on(int index);
   void init_set_sequence_window();
+  void init_get_status_window();
+  void set_get_status_item_on(int index);
+  void clear_get_status_item(int index);
   void update_sequence();
   void set_send_sequence_item_on(int index);
   void init_menu_window();
@@ -154,11 +157,16 @@ private:
 
   std::string topic_recv_time_ = "";
 
+  int get_status_ev_num_ = 0;
+  bool repeat_get_status_ = false;
+  int get_status_interval_sec_ = 1;
+
   WINDOW * sub_window = nullptr;
   WINDOW * ev_status_window_ = nullptr;
   WINDOW * ev_status_sub_window_ = nullptr;
   WINDOW * robot_service_window_ = nullptr;
   WINDOW * set_sequence_window_ = nullptr;
+  WINDOW * get_status_window_ = nullptr;
   WINDOW * menu_window_ = nullptr;
 
   const int COLOR_PAIR_BG = 0;
@@ -175,11 +183,13 @@ private:
   enum MenuItem {ROBOT_SERVICE = 0, SET_SEQUENCE, GET_EV_STATUS};
   enum RobotServiceItem {EV_NUM = 0, CALL_FLOOR, DEST_FLOOR, IV_EV};
   enum SetSequenceItem {TAKING_ON = 0, GETTING_OFF};
+  enum GetStatusItem {GET_STATUS_EV_NUM=0, REPEAT, INTERVAL, GET_STATUS_ONCE};
 
   int cnt_ = 0;
   int curr_menu_index_ = 0;
   int curr_robot_service_item_ = 0;
   int curr_sequnce_item_ = 0;
+  int curr_get_status_item_ = 0;
 };
 
 #endif  // TKE_CONTROLLER__TKE_CONTROLLER_NODE_HPP_

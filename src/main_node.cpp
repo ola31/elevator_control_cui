@@ -46,6 +46,13 @@ MainNode::MainNode()
 
 
   init_window();
+
+  request_ev_status_timer_ =
+    this->create_wall_timer(
+//    1000ms,
+    std::chrono::seconds(1),
+    std::bind(&MainNode::request_ev_status, this));
+  request_ev_status_timer_->cancel();
 }
 
 MainNode::~MainNode()
@@ -57,6 +64,11 @@ MainNode::~MainNode()
   delwin(sub_window);
   delwin(menu_window_);
   endwin();
+}
+
+void MainNode::request_ev_status()
+{
+  get_ev_status(get_status_ev_num_);
 }
 
 
@@ -81,7 +93,7 @@ void MainNode::robot_service_seqeunce_callback(
   // RCLCPP_INFO(this->get_logger(), "sequence : %s", msg->sequence.c_str());
   sequence_ = msg->sequence;
   update_topic_recv_time();
-  print_sequence(sequence_);
+  update_sequence();
 }
 
 
@@ -138,8 +150,16 @@ void MainNode::robot_service_call(int ev_num, std::string call_floor, std::strin
       bool result = response->result;
       if (result) {
         robot_service_result_ = "True";
+        if (curr_menu_index_ == MenuItem::ROBOT_SERVICE) {
+          mvwprintw(robot_service_window_, 6, 25, "RESULT :       ");
+          mvwprintw(robot_service_window_, 6, 25, "RESULT : True");
+        }
       } else {
-        robot_service_result_ = "False";
+        if (curr_menu_index_ == MenuItem::ROBOT_SERVICE) {
+          robot_service_result_ = "False";
+          mvwprintw(robot_service_window_, 6, 25, "RESULT :       ");
+          mvwprintw(robot_service_window_, 6, 25, "RESULT : False");
+        }
       }
     };
 
@@ -162,8 +182,16 @@ void MainNode::robot_service_in_ev_call(int ev_num, std::string dest_floor)
       bool result = response->result;
       if (result) {
         robot_service_result_ = "True";
+        if (curr_menu_index_ == MenuItem::ROBOT_SERVICE) {
+          mvwprintw(robot_service_window_, 6, 25, "RESULT :       ");
+          mvwprintw(robot_service_window_, 6, 25, "RESULT : True");
+        }
       } else {
         robot_service_result_ = "False";
+        if (curr_menu_index_ == MenuItem::ROBOT_SERVICE) {
+          mvwprintw(robot_service_window_, 6, 25, "RESULT :       ");
+          mvwprintw(robot_service_window_, 6, 25, "RESULT : False");
+        }
       }
       return;
     };
@@ -342,7 +370,7 @@ void MainNode::init_menu_window()
 void MainNode::init_robot_service_window()
 {
   if (robot_service_window_ == nullptr) {
-    robot_service_window_ = newwin(7, 30, 15, 1);
+    robot_service_window_ = newwin(10, 44, 15, 1);
   }
   wattron(robot_service_window_, A_NORMAL);
   box(robot_service_window_, ACS_VLINE, ACS_HLINE);
@@ -353,6 +381,9 @@ void MainNode::init_robot_service_window()
   mvwprintw(robot_service_window_, 2, 1, "CALL FLOOR : ");
   mvwprintw(robot_service_window_, 3, 1, "DEST FLOOR : ");
   mvwprintw(robot_service_window_, 4, 1, "In EV      : ");
+  mvwprintw(robot_service_window_, 6, 13, "START");
+  mvwprintw(robot_service_window_, 7, 13, "CANCEL");
+  mvwprintw(robot_service_window_, 6, 25, "RESULT : ");
 
   wattron(robot_service_window_, A_UNDERLINE);
   wattron(robot_service_window_, COLOR_PAIR(COLOR_PAIR_ROBOT_SERVICE_DATA_));
@@ -378,9 +409,12 @@ void MainNode::init_robot_service_window()
 
 void MainNode::set_robot_service_item_on(int index)
 {
+  wattron(robot_service_window_, A_BOLD);
+  mvwprintw(robot_service_window_, 6, 13, "START ");
+  mvwprintw(robot_service_window_, 7, 13, "CANCEL");
+
   wattron(robot_service_window_, A_UNDERLINE);
   wattron(robot_service_window_, COLOR_PAIR(COLOR_PAIR_ROBOT_SERVICE_DATA_));
-  wattron(robot_service_window_, A_BOLD);
   mvwprintw(robot_service_window_, 1, 13, "      ");
   mvwprintw(robot_service_window_, 2, 13, "      ");
   mvwprintw(robot_service_window_, 3, 13, "      ");
@@ -402,6 +436,12 @@ void MainNode::set_robot_service_item_on(int index)
   } else if (index == RobotServiceItem::IV_EV) {
     mvwprintw(robot_service_window_, 4, 13, "      ");
     mvwprintw(robot_service_window_, 4, 13, in_ev_ ? "True" : "False");
+  } else if (index == RobotServiceItem::START) {
+    mvwprintw(robot_service_window_, 6, 13, "      ");
+    mvwprintw(robot_service_window_, 6, 13, "START ");
+  } else if (index == RobotServiceItem::CANCEL) {
+    mvwprintw(robot_service_window_, 7, 13, "      ");
+    mvwprintw(robot_service_window_, 7, 13, "CANCEL");
   }
   wrefresh(robot_service_window_);
   wattron(robot_service_window_, A_NORMAL);
@@ -429,7 +469,7 @@ void MainNode::clear_robot_service_item(int index)
 void MainNode::init_set_sequence_window()
 {
   if (set_sequence_window_ == nullptr) {
-    set_sequence_window_ = newwin(7, 30, 15, 1);
+    set_sequence_window_ = newwin(7, 44, 15, 1);
   }
   box(set_sequence_window_, ACS_VLINE, ACS_HLINE);
   wbkgd(set_sequence_window_, COLOR_PAIR(3));
@@ -451,11 +491,13 @@ void MainNode::init_set_sequence_window()
 
 void MainNode::update_sequence()
 {
-  mvwprintw(set_sequence_window_, 1, 13, "                ");
-  mvwprintw(set_sequence_window_, 2, 13, "                ");
-  mvwprintw(set_sequence_window_, 1, 13, sequence_.c_str());
-  mvwprintw(set_sequence_window_, 2, 13, topic_recv_time_.c_str());
-  wrefresh(set_sequence_window_);
+  if (curr_menu_index_ == MenuItem::SET_SEQUENCE) {
+    mvwprintw(set_sequence_window_, 1, 13, "                           ");
+    mvwprintw(set_sequence_window_, 2, 13, "                           ");
+    mvwprintw(set_sequence_window_, 1, 13, sequence_.c_str());
+    mvwprintw(set_sequence_window_, 2, 13, topic_recv_time_.c_str());
+    wrefresh(set_sequence_window_);
+  }
 }
 
 void MainNode::set_send_sequence_item_on(int index)
@@ -475,7 +517,7 @@ void MainNode::set_send_sequence_item_on(int index)
 void MainNode::init_get_status_window()
 {
   if (get_status_window_ == nullptr) {
-    get_status_window_ = newwin(7, 30, 15, 1);
+    get_status_window_ = newwin(7, 44, 15, 1);
   }
   box(get_status_window_, ACS_VLINE, ACS_HLINE);
   wbkgd(get_status_window_, COLOR_PAIR(3));
@@ -560,8 +602,12 @@ void MainNode::set_menu_item_on(int index)
   werase(set_sequence_window_);
   wclear(set_sequence_window_);
 
+  werase(get_status_window_);
+  wclear(get_status_window_);
+
   wrefresh(robot_service_window_);
   wrefresh(set_sequence_window_);
+  wrefresh(get_status_window_);
 
   if (index == ROBOT_SERVICE) {
     mvwprintw(menu_window_, 1, 1, "ROBOT SERVICE");
@@ -602,6 +648,7 @@ void MainNode::print_ev_status()
   print_run(run_);
   print_door(door_);
   print_mode(mode_);
+  touchwin(stdscr);
   wrefresh(ev_status_sub_window_);
 }
 
@@ -623,7 +670,7 @@ void MainNode::print_ev_num(std::string value)
 {
   mvwprintw(
     ev_status_sub_window_, UPPER_WIN_START_Y + 1, 1,
-    "                                                        ");
+    "                                                     ");
   mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 1, 1, value.c_str());
 }
 
@@ -631,7 +678,7 @@ void MainNode::print_ev_name(std::string value)
 {
   mvwprintw(
     ev_status_sub_window_, UPPER_WIN_START_Y + 2, 1,
-    "                                                        ");
+    "                                                     ");
   mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 2, 1, value.c_str());
 }
 
@@ -639,7 +686,7 @@ void MainNode::print_floor(std::string value)
 {
   mvwprintw(
     ev_status_sub_window_, UPPER_WIN_START_Y + 3, 1,
-    "                                                        ");
+    "                                                     ");
   mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 3, 1, value.c_str());
 }
 
@@ -648,7 +695,7 @@ void MainNode::print_direction(std::string value)
 {
   mvwprintw(
     ev_status_sub_window_, UPPER_WIN_START_Y + 4, 1,
-    "                                                        ");
+    "                                                     ");
   mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 4, 1, value.c_str());
 }
 
@@ -656,7 +703,7 @@ void MainNode::print_run(std::string value)
 {
   mvwprintw(
     ev_status_sub_window_, UPPER_WIN_START_Y + 5, 1,
-    "                                                        ");
+    "                                                     ");
   mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 5, 1, value.c_str());
 }
 
@@ -665,7 +712,7 @@ void MainNode::print_door(std::string value)
 {
   mvwprintw(
     ev_status_sub_window_, UPPER_WIN_START_Y + 6, 1,
-    "                                                        ");
+    "                                                     ");
   mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 6, 1, value.c_str());
 }
 
@@ -673,7 +720,7 @@ void MainNode::print_mode(std::string value)
 {
   mvwprintw(
     ev_status_sub_window_, UPPER_WIN_START_Y + 7, 1,
-    "                                                        ");
+    "                                                     ");
   mvwprintw(ev_status_sub_window_, UPPER_WIN_START_Y + 7, 1, value.c_str());
 }
 
@@ -755,13 +802,23 @@ void MainNode::input_handler(int c)
           wgetstr(robot_service_window_, input);
         }
         in_ev_ = in_ev_ ? false : true;
+      } else if (curr_robot_service_item_ == RobotServiceItem::START) {
+        try {
+          int ev_num = std::stoi(call_ev_num_);
+          robot_service_call(ev_num, call_floor_, dest_floor_);
+        } catch (...) {
+        }
+      } else if (curr_robot_service_item_ == RobotServiceItem::CANCEL) {
+        cancel_robot_service();
       }
       set_robot_service_item_on(curr_robot_service_item_);
       curs_set(0);  // 커서 안보이게
       noecho();  // 입력 문자 안보이게
     } else if (curr_menu_index_ == MenuItem::SET_SEQUENCE) {
       if (curr_sequnce_item_ == SetSequenceItem::TAKING_ON) {
+        set_robot_service("Taking On");
       } else if (curr_sequnce_item_ == SetSequenceItem::GETTING_OFF) {
+        set_robot_service("Getting Off");
       }
     } else if (curr_menu_index_ == MenuItem::GET_EV_STATUS) {
       if (curr_get_status_item_ == GetStatusItem::GET_STATUS_EV_NUM) {
@@ -783,6 +840,11 @@ void MainNode::input_handler(int c)
         noecho(); // 입력 문자 안보이게
       } else if (curr_get_status_item_ == GetStatusItem::REPEAT) {
         repeat_get_status_ = repeat_get_status_ ? false : true;
+        if (repeat_get_status_) {
+          request_ev_status_timer_->reset();
+        } else {
+          request_ev_status_timer_->cancel();
+        }
       } else if (curr_get_status_item_ == GetStatusItem::INTERVAL) {
         curs_set(1);   // 커서 보이게
         echo();   // 입력문자 보이게
@@ -805,55 +867,6 @@ void MainNode::input_handler(int c)
       }
       set_get_status_item_on(curr_get_status_item_);
     }
-  } else if (c == 'i' || c == 'I') {
-    in_ev_ = in_ev_ ? false : true;
-    print_in_ev(in_ev_);
-    cnt_ = 0;
-  } else if (c == 'e' || c == 'E') {
-
-    sub_window = newwin(10, 30, 5, 5);
-    box(sub_window, ACS_VLINE, ACS_HLINE);
-    wmove(sub_window, 2, 2);
-    mvwprintw(sub_window, 2, 2, "EV Num     : ");
-    mvwprintw(sub_window, 3, 2, "Call Floor : ");
-    mvwprintw(sub_window, 4, 2, "Dest Floor : ");
-    wmove(sub_window, 2, 15);
-    curs_set(1);     // 커서 보이게
-    echo();     // 입력문자 보이게
-    wbkgd(sub_window, COLOR_PAIR(3));
-    refresh();
-    char input[10];
-    wgetstr(sub_window, input);
-    call_ev_num_ = std::string(input);
-
-    wmove(sub_window, 3, 15);
-    wgetstr(sub_window, input);
-    call_floor_ = std::string(input);
-
-    wmove(sub_window, 4, 15);
-    wgetstr(sub_window, input);
-    dest_floor_ = std::string(input);
-
-    print_call_ev_num(call_ev_num_);
-    print_call_floor(call_floor_);
-    print_dest_floor(dest_floor_);
-    touchwin(stdscr);
-    werase(sub_window);
-    wclear(sub_window);
-    delwin(sub_window);
-    curs_set(0);  // 커서 안보이게
-    noecho();  // 입력 문자 안보이게
-    refresh();
-    cnt_ = 0;
-  } else if (c == 27) {    // ESC
-    cancel_robot_service();
-    cnt_ = 0;
-  } else if (c == 't' || c == 'T') {
-    set_robot_service("Taking On");
-    cnt_ = 0;
-  } else if (c == 'g' || c == 'G') {
-    set_robot_service("Getting Off");
-    cnt_ = 0;
   } else if (c == 'r' || c == 'R') {
     clear();
     endwin();
@@ -877,10 +890,10 @@ void MainNode::input_handler(int c)
       } else {
         curr_robot_service_item_--;
       }
-      if (curr_robot_service_item_ > 3) {
+      if (curr_robot_service_item_ > 5) {
         curr_robot_service_item_ = 0;
       } else if (curr_robot_service_item_ < 0) {
-        curr_robot_service_item_ = 3;
+        curr_robot_service_item_ = 5;
       }
       set_robot_service_item_on(curr_robot_service_item_);
     } else if (curr_menu_index_ == MenuItem::SET_SEQUENCE) {

@@ -68,6 +68,8 @@ public:
   MainNode();
   ~MainNode();
 
+  void request_ev_status();
+
   void init_window();
   void init_color_pair();
   void input_handler(int c);
@@ -179,9 +181,10 @@ private:
   const int COLOR_PAIR_ROBOT_SERVICE_DATA_ = 7;
   const int COLOR_PAIR_ROBOT_SERVICE_ITEM_ON_ = 8;
 
+  rclcpp::TimerBase::SharedPtr request_ev_status_timer_;
 
   enum MenuItem {ROBOT_SERVICE = 0, SET_SEQUENCE, GET_EV_STATUS};
-  enum RobotServiceItem {EV_NUM = 0, CALL_FLOOR, DEST_FLOOR, IV_EV};
+  enum RobotServiceItem {EV_NUM = 0, CALL_FLOOR, DEST_FLOOR, IV_EV, START, CANCEL};
   enum SetSequenceItem {TAKING_ON = 0, GETTING_OFF};
   enum GetStatusItem {GET_STATUS_EV_NUM=0, REPEAT, INTERVAL, GET_STATUS_ONCE};
 
